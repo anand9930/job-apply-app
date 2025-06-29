@@ -9,17 +9,19 @@ from urllib.parse import quote
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from typing import Optional, Union
+import utils, dbutils
 
 
 @dataclass
 class JobData:
-    title: str
-    company: str
+    job_id: int
+    company_name: str
     location: str
+    job_title: str
     job_link: str
     job_description: str
     job_criteria: str
-    posted_date: str
+    job_posted_date: str
 
 
 
@@ -112,8 +114,8 @@ class LinkedInJobsScraper:
 
     def _extract_job_data(self, job_card: BeautifulSoup) -> Optional[JobData]:
         try:
-            title = job_card.find("h3", class_="base-search-card__title").text.strip()
-            company = job_card.find(
+            job_title = job_card.find("h3", class_="base-search-card__title").text.strip()
+            company_name = job_card.find(
                 "h4", class_="base-search-card__subtitle"
             ).text.strip()
             location = job_card.find(
@@ -123,22 +125,25 @@ class LinkedInJobsScraper:
                 job_card.find("a", class_="base-card__full-link")["href"]
             )
             job_id=job_link.split("-")[-1]
-            posted_date = job_card.find("time", class_="job-search-card__listdate")
-            posted_date = posted_date.text.strip() if posted_date else "N/A"
+            job_posted_date = job_card.find("time", class_="job-search-card__listdate")
+            job_posted_date = job_posted_date.text.strip() if job_posted_date else "N/A"
             job_link_url=self.build_job_api_url(job_id)
+            print(job_link_url)
 
             soup = self._fetch_job_page(job_link_url)
             job_description = soup.find("div", class_="description__text").text.strip()
             job_criteria = soup.find("ul", class_="description__job-criteria-list").text.strip()
+            job_posted_date=soup.find("span", class_="posted-time-ago__text").text.strip()
 
             return JobData(
-                title=title,
-                company=company,
+                job_id=job_id,
+                company_name=company_name,
                 location=location,
+                job_title=job_title,
                 job_link=job_link,
                 job_description=job_description,
                 job_criteria=job_criteria,
-                posted_date=posted_date
+                job_posted_date=utils.linkedin_to_pgdate(job_posted_date)
             )
         except Exception as e:
             print(f"Failed to extract job data: {str(e)}")
@@ -165,9 +170,9 @@ class LinkedInJobsScraper:
             try:
               #  url = self._build_search_url(keywords, location, start)
                 url = self._build_search_url(
-                    keywords="mlops",
-                    location="united states",
-                    start=25,
+                    keywords=keywords,
+                    location=location,
+                    start=start,
                     f_AL=True,
                     f_E=[3, 4],
                     f_JT=["F", "C"],
@@ -175,7 +180,7 @@ class LinkedInJobsScraper:
                     f_JIYN=True,
                     f_TPR="r604800"
                 )
-                print(url)
+                #print(url)
                 soup = self._fetch_job_page(url)
                 job_cards = soup.find_all("div", class_="base-card")
 
@@ -206,12 +211,25 @@ class LinkedInJobsScraper:
             json.dump([vars(job) for job in jobs], f, indent=2, ensure_ascii=False)
         print(f"Saved {len(jobs)} jobs to {filename}")
 
+        for job in jobs:
+            data={
+                "job_id": job.job_id,
+                "company_name": job.company_name,
+                "location": job.location,
+                "job_title": job.job_title,
+                "job_link": job.job_link,
+                "job_description": job.job_description,
+                "job_criteria": job.job_criteria,
+                "job_posted_date": job.job_posted_date
+            }
+            dbutils.insert_job_posting(data)
+
 
 def main():
-    params = {"keywords": "Generative AI", "location": "united states", "max_jobs": 10}
+    params = {"keywords": "Generative AI", "location": "united states", "max_jobs": 1000}
 
     scraper = LinkedInJobsScraper()
-    jobs = scraper.scrape_jobs(**params)
+    jobs = scraper.scrape_jobs(**params)    
     scraper.save_results(jobs)
 
 
