@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 import re
 
 import pytz
@@ -61,3 +62,20 @@ def linkedin_to_pgdate(text: str,
         delta = relativedelta(years=n)
 
     return (now - delta).strftime("%Y-%m-%d")
+
+
+def load_json(file_path):
+    with open(file_path, 'r') as file:
+        return json.load(file)
+    
+def load_prompt(filepath):
+    """Load and return the content of a prompt file."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as file:
+            return file.read()
+    except FileNotFoundError:
+        print(f"Error: File not found: {filepath}")
+        return None
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+        return None

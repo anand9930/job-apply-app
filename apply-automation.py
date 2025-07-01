@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 controller = Controller()
 
-@controller.action('Upload file with file path')
+@controller.action('Upload file with file path to interactive index element if element is not found, try with different interactive index of the same upload element')
 async def upload_file(index: int, path: str, browser_session: BrowserSession, available_file_paths: list[str]):
 	print(f'Uploading file at index {index} with path {path}')
 	print(f'Uploading file at index {index} with path {available_file_paths}')
@@ -289,7 +289,7 @@ async def main():
     )
 
     agent = Agent(
-        task="open linkedin and apply this job https://www.linkedin.com/jobs/view/manager-machine-learning-engineering-at-hca-healthcare-4256329096",
+        task="open linkedin and apply this job https://www.linkedin.com/jobs/view/principal-ai-engineer-at-forbes-technical-consulting-4255909850/",
         llm=llm,
         browser_session=browser_session,
         extend_system_message=extend_system_message,

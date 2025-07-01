@@ -177,7 +177,7 @@ class LinkedInJobsScraper:
                     f_E=[3, 4],
                     f_JT=["F", "C"],
                     f_WT=2,
-                    f_JIYN=True,
+                    f_JIYN=False,
                     f_TPR="r604800"
                 )
                 #print(url)
@@ -207,9 +207,9 @@ class LinkedInJobsScraper:
     ) -> None:
         if not jobs:
             return
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump([vars(job) for job in jobs], f, indent=2, ensure_ascii=False)
-        print(f"Saved {len(jobs)} jobs to {filename}")
+        # with open(filename, "w", encoding="utf-8") as f:
+        #     json.dump([vars(job) for job in jobs], f, indent=2, ensure_ascii=False)
+        # print(f"Saved {len(jobs)} jobs to {filename}")
 
         for job in jobs:
             data={
@@ -225,8 +225,8 @@ class LinkedInJobsScraper:
             dbutils.insert_job_posting(data)
 
 
-def main():
-    params = {"keywords": "Generative AI", "location": "united states", "max_jobs": 1000}
+def main(keyword: Optional[str] = None, location: Optional[str] = None):
+    params = {"keywords": "keyword", "location": location, "max_jobs": 50}
 
     scraper = LinkedInJobsScraper()
     jobs = scraper.scrape_jobs(**params)    
@@ -234,32 +234,15 @@ def main():
 
 
 if __name__ == "__main__":
+    keywords_list=utils.load_json("/Users/anand/Documents/projects/job-apply-app/src/search/keywords.json")
+    location_list=utils.load_json("/Users/anand/Documents/projects/job-apply-app/src/search/locations.json")
+    print(f"Keywords: {keywords_list}")
+    print(f"Locations: {location_list}")
+    for location in location_list:
+        for keyword in keywords_list:
+            print(f"Scraping jobs for keyword: {keyword} in location: {location}")
+            main(keyword=keyword, location=location)
     main()
 
 
-# [
-#   "Finland",
-#   "Switzerland",
-#   "Denmark",
-#   "Iceland",
-#   "Norway",
-#   "Sweden",
-#   "Netherlands",
-#   "Luxembourg",
-#   "Ireland",
-#   "Austria",
-#   "Germany",
-#   "New Zealand",
-#   "Canada",
-#   "Australia",
-#   "Singapore",
-#   "Hong Kong SAR",
-#   "United Arab Emirates",
-#   "United Kingdom",
-#   "United States",
-#   "Italy",
-#   "Belgium",
-#   "Malta",
-#   "Liechtenstein",
-#   "Japan"
-# ]
+
